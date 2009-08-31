@@ -5,6 +5,9 @@ Developed by MobileWish (www.mobilewish.com)
 (c) November 2007
 Author: Samir K. Dash <samir@mobilewish.com>
 
+Additional Contributors:
+	Jonathan M. Woffenden <jwoffenden@gmail.com>
+
 */
 package com.mobilewish.as3texteditorlite{
 
@@ -273,8 +276,6 @@ private var imgTargetLabel:TextField = new TextField();
 			}
 		}
 
-
-
      protected function AddDemo():void {
 		 
 		 var DemoText:TextField = new TextField();
@@ -296,8 +297,7 @@ private var imgTargetLabel:TextField = new TextField();
 			
 		 
 	 }
-
-
+	 
 		private function AddingChildren():void {
 
 
@@ -2417,10 +2417,6 @@ imgBackBG.visible = false;
 			replaceBut.enabled = false;
 		}
 
-
-
-
-
 		private function findWindowActivatorListener(e:Event):void {
 
 			changeFindButtonToggle();
@@ -2473,16 +2469,59 @@ imgBackBG.visible = false;
 
 		private function comboBoxChangeListener(event:Event):void {
 			if (viewHTML.enabled == true) {
-				applyStyle(event.currentTarget);
+				if (input_txt.selectionBeginIndex == input_txt.selectionEndIndex)
+				{
+					stage.focus = input_txt;
+					var defaultFormat:TextFormat = input_txt.defaultTextFormat;
+					switch(event.currentTarget)
+					{
+						case font_cb :
+							// if it's the font combo box and nothing is selected, change the default format so new text will be affected.
+							defaultFormat.font = ComboBox(event.currentTarget).selectedItem.fontName;
+							break;
+						case size_cb :
+							defaultFormat.size = ComboBox(event.currentTarget).selectedLabel;
+							break;
+					}
+					input_txt.defaultTextFormat = defaultFormat;
+				}
+				else
+					applyStyle(event.currentTarget);
 			}
 		}
 
 		private function buttonClickListener(event:MouseEvent):void {
 
 			if (viewHTML.enabled == true) {
-				applyStyle(event.currentTarget);
-
-
+				//If they have no text selected, change the default text style
+				if (input_txt.selectionBeginIndex == input_txt.selectionEndIndex)
+				{
+					stage.focus = input_txt;
+					var defaultFormat:TextFormat = input_txt.defaultTextFormat;
+					switch(event.currentTarget)
+					{
+						case bold_button :
+							// if the bold_btn Button instance is clicked, toggle the bold property.
+							defaultFormat.bold = !defaultFormat.bold;
+							break;
+						case underline_button :
+							// if the underline_button Button instance is clicked, toggle the underline property.
+							defaultFormat.underline = !defaultFormat.underline;
+							break;
+						case italic_button :
+							defaultFormat.italic = !defaultFormat.italic;
+							break;
+						case sizeUp_button :
+							defaultFormat.size += 1;
+							break;
+						case sizeDown_button :
+							defaultFormat.size = Number(defaultFormat.size)-1;
+							break;
+					}
+					input_txt.defaultTextFormat = defaultFormat;
+				}
+				else
+					applyStyle(event.currentTarget);
 			}
 		}
 		private function hyperbuttonClickListener(event:MouseEvent):void {
@@ -2502,6 +2541,12 @@ imgBackBG.visible = false;
 
 			// //trace(selectedFontColor);
 			if (viewHTML.enabled == true) {
+				if (input_txt.selectionBeginIndex == input_txt.selectionEndIndex)
+				{
+					var defaultFormat:TextFormat = input_txt.defaultTextFormat;
+					defaultFormat.color = event.color;
+					input_txt.defaultTextFormat = defaultFormat;
+				}
 				applyStyle(event.currentTarget);
 			}
 		}
@@ -2531,6 +2576,11 @@ imgBackBG.visible = false;
 			if ((input_txt.selectionBeginIndex == 0) && (input_txt.selectionEndIndex == 0)) {
 				return;
 			}
+			
+			//JMW - this fixes a crash that occurs if they don't have any text selected but change the style.
+			if (input_txt.selectionBeginIndex == input_txt.selectionEndIndex)
+				return;
+			
 			var my_fmt:TextFormat = input_txt.getTextFormat(input_txt.selectionBeginIndex, input_txt.selectionEndIndex);
 			// because the majority of the code in this function is the same, 
 			// rather than rewrite the code for each instance, we'll perform a "switch" 
@@ -2551,6 +2601,17 @@ imgBackBG.visible = false;
 					// if the underline_button Button instance is clicked, toggle the underline property.
 					my_fmt.underline = !my_fmt.underline;
 					break;
+				case italic_button :
+					my_fmt.italic = !my_fmt.italic;
+					break;
+				case sizeUp_button :
+					// if the sizeUp_btn Button instance is clicked, increment the font size by one pixel.
+					my_fmt.size += 1;
+					break;
+				case sizeDown_button :
+					my_fmt.size = Number(my_fmt.size)-1;
+					break;
+					
 				case hyperlink_button :
 
 
@@ -2568,17 +2629,6 @@ imgBackBG.visible = false;
 						my_fmt.underline =  true;
 					}
 					//applyStyle(input_txt);
-					break;
-
-				case italic_button :
-					my_fmt.italic = !my_fmt.italic;
-					break;
-				case sizeUp_button :
-					// if the sizeUp_btn Button instance is clicked, increment the font size by one pixel.
-					my_fmt.size += 1;
-					break;
-				case sizeDown_button :
-					my_fmt.size = Number(my_fmt.size)-1;
 					break;
 
 
