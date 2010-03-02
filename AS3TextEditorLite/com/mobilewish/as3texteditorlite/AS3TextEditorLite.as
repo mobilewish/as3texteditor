@@ -8,10 +8,13 @@ Author: Samir K. Dash <samir@mobilewish.com>
 Additional Contributors:
 	Jonathan M. Woffenden <jwoffenden@gmail.com>
 
+Notes and todos:
+	
 */
-package com.mobilewish.as3texteditorlite{
-
+package com.mobilewish.as3texteditorlite
+{
 	import fl.core.UIComponent;
+	import flash.display.DisplayObject;
 	import flash.display.Stage;
 	import flash.display.Sprite;
 	import flash.text.*;
@@ -19,10 +22,11 @@ package com.mobilewish.as3texteditorlite{
 	import fl.events.ScrollEvent;
 
 	import fl.controls.UIScrollBar;
-
+	import flash.ui.Keyboard;
 
 	import flash.display.MovieClip;
 	import flash.events.Event;
+	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
 	import fl.controls.*;
 	import fl.data.DataProvider;
@@ -31,13 +35,15 @@ package com.mobilewish.as3texteditorlite{
 	import fl.events.ColorPickerEvent;
 
 
-	public class AS3TextEditorLite extends UIComponent {
+	public class AS3TextEditorLite extends UIComponent 
+	{
 
 		private var  selectedFontColor:uint;
 		private var  selectedLinkColor:uint;
 
 		private var  HTMLtext:TextField = new TextField();
 		private var  isActive:Boolean = true;
+		private var  mIsRichText:Boolean = true; // JMW: Used to keep track of whether or not we're in wysiwyg mode.
 		private var  beginIndex:int = 0;
 		private var  endIndex:int = 0;
 		private var  lastIndexTillSearched:uint;
@@ -52,17 +58,11 @@ package com.mobilewish.as3texteditorlite{
 		private var  clipBoard:String = new String();
 		private var  clipboardFmt:TextFormat = new TextFormat();
 
-
 		private var  rightIndentBut:Button = new Button();
 		private var  leftIndentBut:Button = new Button();
 
-
-
-
 		private var  l_button:Button = new Button();
-
-
-
+		
 		private var  charBackBut:Button = new Button();
 		private var  findNextBut:Button = new Button();
 		private var  replaceBut:Button = new Button();
@@ -90,8 +90,8 @@ package com.mobilewish.as3texteditorlite{
 		private var  bold_button:Button = new Button();
 		private var  italic_button:Button = new Button();
 		private var  underline_button:Button = new Button();
-		private var  sizeUp_button:Button = new Button();
-		private var  sizeDown_button:Button = new Button();
+		private var  sizeUpButton:Button = new Button();
+		private var  sizeDownButton:Button = new Button();
 
 
 		private var  leftAlign_button:Button = new Button();
@@ -175,24 +175,24 @@ package com.mobilewish.as3texteditorlite{
 		
 		
 			
-					private var imgPathTxt:TextInput =  new TextInput();
-					private var imgAlignCb:ComboBox = new ComboBox();
-					private var imgWidthTxt:TextInput =  new TextInput();
-					private var imgHeightTxt:TextInput =  new TextInput();
-					private var imgHSNs:NumericStepper = new NumericStepper();
-					private var imgVSNs:NumericStepper = new NumericStepper();
-					private var imgURLTxt:TextInput =  new TextInput();
-					private var imgTargetCb:ComboBox = new ComboBox();
-					private var imgBackBt:Button = new Button();
-					private var imgBackBG:Button = new Button();
-private var imgLabel:TextField = new TextField();
-private var imgAlignLabel:TextField = new TextField();
-private var imgWidthLabel:TextField = new TextField();
-private var imgHeightLabel:TextField = new TextField();
-private var imgHSpLabel:TextField = new TextField();
-private var imgVSpLabel:TextField = new TextField();
-private var imgURLLabel:TextField = new TextField();
-private var imgTargetLabel:TextField = new TextField();
+		private var imgPathTxt:TextInput =  new TextInput();
+		private var imgAlignCb:ComboBox = new ComboBox();
+		private var imgWidthTxt:TextInput =  new TextInput();
+		private var imgHeightTxt:TextInput =  new TextInput();
+		private var imgHSNs:NumericStepper = new NumericStepper();
+		private var imgVSNs:NumericStepper = new NumericStepper();
+		private var imgURLTxt:TextInput =  new TextInput();
+		private var imgTargetCb:ComboBox = new ComboBox();
+		private var imgBackBt:Button = new Button();
+		private var imgBackBG:Button = new Button();
+		private var imgLabel:TextField = new TextField();
+		private var imgAlignLabel:TextField = new TextField();
+		private var imgWidthLabel:TextField = new TextField();
+		private var imgHeightLabel:TextField = new TextField();
+		private var imgHSpLabel:TextField = new TextField();
+		private var imgVSpLabel:TextField = new TextField();
+		private var imgURLLabel:TextField = new TextField();
+		private var imgTargetLabel:TextField = new TextField();
 
 		private var imgIDTxt:TextInput = new TextInput();
 		private var imgIDLabel:TextField = new TextField();
@@ -200,46 +200,49 @@ private var imgTargetLabel:TextField = new TextField();
 
 		public var input_txt:TextField = new TextField();
 		public var scroller:UIScrollBar = new UIScrollBar();
+		
+		private var mCurrentX:Number = 0;
+		private var mCurrentY:Number = 0;
 
 
-
-
-
-
-
-
-		public function AS3TextEditorLite() {
+		public function AS3TextEditorLite() 
+		{
 			super();
-
-
-
-
-
-            //AddDemo();
-
-			AddingChildren();
+		    //AddDemo();
+	
+			addChildren();
 			SetElements();
 			ShowAllRow();
 			//input_txt.addEventListener(MouseEvent.MOUSE_UP, input_txtListener);
 			input_txt.addEventListener(MouseEvent.MOUSE_UP, handleClick);
-
-
-
-
-
-
-
 		}
 
+		public function set fontSize(newSize:int):void
+		{			
+			var provider:DataProvider = size_cb.dataProvider;
+			
+			
+			for(var i:int = 0; i < provider.length; i++)
+			{
+				var dataObj:Object = provider.getItemAt(i);
+				if (dataObj.data == newSize)
+				{
+					size_cb.selectedIndex = i;
+					var format:TextFormat = input_txt.defaultTextFormat;
+					format.size = newSize;
+					input_txt.defaultTextFormat = format;
+					return; // No need to keep looking, we found our font size.
+				}
+			}
+		}
 
-
-
-		protected override function configUI():void {
-
+		protected override function configUI():void 
+		{
 			super.configUI();
 		}
-		protected override function draw():void {
-
+		
+		protected override function draw():void 
+		{
 			//Lastline
 			super.draw();
 		}
@@ -247,12 +250,6 @@ private var imgTargetLabel:TextField = new TextField();
 
 		}
 		//All the other methods and properties are component specific
-
-
-
-
-
-
 
 		public function handleClick(e:Event):void {
 
@@ -276,60 +273,9 @@ private var imgTargetLabel:TextField = new TextField();
 			}
 		}
 
-     protected function AddDemo():void {
-		 
-		 var DemoText:TextField = new TextField();
-		 addChild(DemoText);
-		 var dtextformat:TextFormat = new TextFormat();
-		 	dtextformat.font = "Tahoma";
-			dtextformat.color = 0xff0000;
-			dtextformat.size = 10;
-		 
-		 
-		 
-		 	DemoText.x = 5;
-			DemoText.y =  22;
-			
-			DemoText.width = 500;
-			DemoText.height = 22;
-			DemoText.text = "::   Demo version of AS3 Rich TextEditor Lite component for Flash CS3. (c)2007-08,  www.MobileWish.com  :: ";
-			DemoText.setTextFormat(dtextformat);
-			
-		 
-	 }
-	 
-		private function AddingChildren():void {
 
-
-
-			/*
-			input_txt.x=4;
-			input_txt.y = 95 ;
-			input_txt.width = 502;
-			input_txt.height = 285;
-			
-			addChild(input_txt);*/
-
-
-
-
-			/*
-			addChild(scroller);
-			scroller.x = 506;
-			scroller.y = 95 ;
-			scroller.scrollTarget = input_txt;
-			scroller.height = input_txt.height;
-			*/
-
-
-
-
-
-
-
-
-
-
+		private function addChildren():void 
+		{
 			addChild(icon1);
 			addChild(icon2);
 			addChild(icon3);
@@ -353,384 +299,121 @@ private var imgTargetLabel:TextField = new TextField();
 			addChild(icon21);
 			addChild(icon22);
 
+			labeltextformat.font = Config.DEFAULT_FONT;
+			labeltextformat.color = Config.DEFAULT_FONT_COLOR;
+			labeltextformat.size = Config.DEFAULT_FONT_SIZE;
 
-
-
-
-			labeltextformat.font = "Tahoma";
-			labeltextformat.color = 0x000000;
-			labeltextformat.size = 10;
-
+			mCurrentY = Config.TOP_PADDING;
 			
+			addButton(font_cb, 272);
+			addButton(size_cb, 60);
+			addButton(bold_button);
+			addButton(italic_button);
+			addButton(underline_button);		
 			
-
-
-			addChild(font_cb);
-			font_cb.x = 0;
-			font_cb.y = 2 ;
-			font_cb.width = 272;
-			font_cb.height = 22;
-
-
-			addChild(size_cb);
-			size_cb.x = 275;
-			size_cb.y = 2 ;
-			size_cb.width = 60;
-			size_cb.height = 22;
-
-
-
-
-			addChild(bold_button);
-			bold_button.x = 339;
-			bold_button.y = 2 ;
-			bold_button.width = 29;
-			bold_button.height = 22;
 			bold_button.label = "";
-			bold_button.labelPlacement = ButtonLabelPlacement.RIGHT;
 			bold_button.setStyle("icon", Icon14);
-
-
-
-			addChild(italic_button);
-			italic_button.x = 371;
-			italic_button.y = 2 ;
-			italic_button.width = 29;
-			italic_button.height = 22;
+			
 			italic_button.label = "";
-			italic_button.labelPlacement = ButtonLabelPlacement.RIGHT;
 			italic_button.setStyle("icon", Icon13);
-
-
-
-
-
-			addChild(underline_button);
-			underline_button.x = 402;
-			underline_button.y = 2 ;
-			underline_button.width = 29;
-			underline_button.height = 22;
+			
 			underline_button.label = "";
-			underline_button.labelPlacement = ButtonLabelPlacement.RIGHT;
 			underline_button.setStyle("icon", Icon12);
 
-
-
-
-			addChild(fontColorPicker);
-			fontColorPicker.x = 434;
-			fontColorPicker.y = 2 ;
-			fontColorPicker.width = 24;
-			fontColorPicker.height = 24;
-
-
-
-
-			/*
-			var sizeUp_button = new Button();
-			addChild(sizeUp_button);
-			sizeUp_button.x = 402;
-			sizeUp_button.y = 2 ;
-			sizeUp_button.width = 29;
-			sizeUp_button.height = 22;
-			*/
-
-
-
-
-
-			addChild(sizeUp_button);
-			sizeUp_button.x = 461;
-			sizeUp_button.y = 2 ;
-			sizeUp_button.width = 29;
-			sizeUp_button.height = 22;
-			sizeUp_button.label="";
-			sizeUp_button.labelPlacement = ButtonLabelPlacement.RIGHT;
-			sizeUp_button.setStyle("icon", Icon17);
-
-
-
-
-
-
-
-
-
-			addChild(sizeDown_button);
-			sizeDown_button.x = 492;
-			sizeDown_button.y = 2 ;
-			sizeDown_button.width = 29;
-			sizeDown_button.height = 22;
-			sizeDown_button.label="";
-			sizeDown_button.labelPlacement = ButtonLabelPlacement.RIGHT;
-			sizeDown_button.setStyle("icon", Icon18);
-
-
-
-
-
-			addChild(viewHTML);
-			viewHTML.x = 0;
-			viewHTML.y = 27 ;
-			viewHTML.width = 266.3;
-			viewHTML.height = 22;
-			viewHTML.label = "< HTML Code >"
+			addButton(fontColorPicker, 24, 24);
 			
+			addButton(sizeUpButton);
+			sizeUpButton.label="";
+			sizeUpButton.setStyle("icon", Icon17);
+
+			addButton(sizeDownButton);
+			sizeDownButton.label="";
+			sizeDownButton.setStyle("icon", Icon18);
 			
-			
-			
-			
-			;
-			addChild(hyperlinkActive);
-			hyperlinkActive.x = 269;
-			hyperlinkActive.y = 27 ;
-			hyperlinkActive.width = 125;
-			hyperlinkActive.height = 22;
-			hyperlinkActive.label = "Open Link Tab";
+			addButton(viewHTML, 267);
+			viewHTML.label = Config.VIEW_HTML_PROMPT;
+
+			addButton(hyperlinkActive, 125);
+			hyperlinkActive.label = Config.OPEN_HYPER_LINK_PROMPT;
 			hyperlinkActive.labelPlacement = ButtonLabelPlacement.RIGHT;
 			hyperlinkActive.setStyle("icon", Icon22);
 
-
-
-
-			addChild(findActive);
-			findActive.x = 395;
-			findActive.y = 27 ;
-			findActive.width = 125;
-			findActive.height = 22;
-			findActive.label = "Open Find Tab";
+			addButton(findActive, 125);
+			findActive.label = Config.FIND_BUTTON_PROMPT;
 			findActive.labelPlacement = ButtonLabelPlacement.RIGHT;
 			findActive.setStyle("icon", Icon15);
+			
 
-
-
-
-
-			addChild(leftIndentBut);
-			leftIndentBut.x = 0;
-			leftIndentBut.y = 52 ;
-			leftIndentBut.width = 29;
-			leftIndentBut.height = 22;
+			addButton(leftIndentBut);
 			leftIndentBut.label = "";
 			leftIndentBut.enabled = false;
-			leftIndentBut.labelPlacement = ButtonLabelPlacement.RIGHT;
 			leftIndentBut.setStyle("icon", Icon9);
-
-
-
-
-
-
-			addChild(rightIndentBut);
-			rightIndentBut.x = 32;
-			rightIndentBut.y = 52 ;
-			rightIndentBut.width = 29;
-			rightIndentBut.height = 22;
+			
+			
+			addButton(rightIndentBut);
 			rightIndentBut.label = "";
 			rightIndentBut.enabled = false;
-			rightIndentBut.labelPlacement = ButtonLabelPlacement.RIGHT;
 			rightIndentBut.setStyle("icon", Icon8);
 
-
-			addChild(l_button);
-			l_button.x = 62;
-			l_button.y = 52 ;
-			l_button.width = 29;
-			l_button.height = 22;
+			addButton(l_button);
 			l_button.label = "";
 			l_button.enabled = false;
-			l_button.labelPlacement = ButtonLabelPlacement.RIGHT;
 			l_button.setStyle("icon", Icon6);
 
-
-
-
-
-
-
-			addChild(leftAlign_button);
-			leftAlign_button.x = 100;
-			leftAlign_button.y = 52 ;
-			leftAlign_button.width = 29;
-			leftAlign_button.height = 22;
+			addButton(leftAlign_button);
 			leftAlign_button.label = "";
-
-			leftAlign_button.labelPlacement = ButtonLabelPlacement.RIGHT;
 			leftAlign_button.setStyle("icon", Icon1);
 
-
-
-
-
-
-
-
-			addChild(centerAlign_button);
-			centerAlign_button.x = 130;
-			centerAlign_button.y = 52 ;
-			centerAlign_button.width = 29;
-			centerAlign_button.height = 22;
+			addButton(centerAlign_button);
 			centerAlign_button.label = "";
-
-			centerAlign_button.labelPlacement = ButtonLabelPlacement.RIGHT;
 			centerAlign_button.setStyle("icon", Icon2);
 
-
-
-
-			addChild(rightAlign_button);
-			rightAlign_button.x = 160;
-			rightAlign_button.y = 52 ;
-			rightAlign_button.width = 29;
-			rightAlign_button.height = 22;
+			addButton(rightAlign_button);
 			rightAlign_button.label = "";
-
-			rightAlign_button.labelPlacement = ButtonLabelPlacement.RIGHT;
 			rightAlign_button.setStyle("icon", Icon3);
 
-
-
-
-
-
-			addChild(justifiedAlign_button);
-			justifiedAlign_button.x = 190;
-			justifiedAlign_button.y = 52 ;
-			justifiedAlign_button.width = 29;
-			justifiedAlign_button.height = 22;
-			justifiedAlign_button.label = ""
-			;
-			justifiedAlign_button.labelPlacement = ButtonLabelPlacement.RIGHT;
+			addButton(justifiedAlign_button);
+			justifiedAlign_button.label = "";
 			justifiedAlign_button.setStyle("icon", Icon4);
 
-
-
-
-
-
-
-
-			addChild(cut_button);
-			cut_button.x = 236.9;
-			cut_button.y = 52 ;
-			cut_button.width = 29;
-			cut_button.height = 22;
+			mCurrentX += 12.9; // I have no idea where this number came from - ask Samir :-) --JMW
+			
+			addButton(cut_button);
 			cut_button.label = "";
-			cut_button.labelPlacement = ButtonLabelPlacement.RIGHT;
 			cut_button.setStyle("icon", Icon7);
 
-
-
-			addChild(copy_button);
-			copy_button.x = 267.9;
-			copy_button.y = 52 ;
-			copy_button.width = 29;
-			copy_button.height = 22;
+			addButton(copy_button);
 			copy_button.label = "";
-			copy_button.labelPlacement = ButtonLabelPlacement.RIGHT;
 			copy_button.setStyle("icon", Icon10);
 
-
-
-			addChild(paste_button);
-			paste_button.x = 297.9;
-			paste_button.y = 52 ;
-			paste_button.width = 29;
-			paste_button.height = 22;
+			addButton(paste_button);
 			paste_button.label = "";
-			paste_button.labelPlacement = ButtonLabelPlacement.RIGHT;
 			paste_button.setStyle("icon", Icon16);
 
-
-
-
-
-
-
-			addChild(selectall_button);
-			selectall_button.x = 329.9;
-			selectall_button.y = 52 ;
-			selectall_button.width = 29;
-			selectall_button.height = 22;
+			addButton(selectall_button);
 			selectall_button.label = "";
-			selectall_button.labelPlacement = ButtonLabelPlacement.RIGHT;
 			selectall_button.setStyle("icon", Icon11);
 
-
-
-
-
-			addChild(removeformatting_button);
-			removeformatting_button.x = 360.9;
-			removeformatting_button.y = 52 ;
-			removeformatting_button.width = 29;
-			removeformatting_button.height = 22;
+			addButton(removeformatting_button);
 			removeformatting_button.label = "";
-			removeformatting_button.labelPlacement = ButtonLabelPlacement.RIGHT;
 			removeformatting_button.setStyle("icon", Icon21);
 
-
-
-
-
-
-			addChild(letterspacing_button);
-			letterspacing_button.x = 430.9;
-			letterspacing_button.y = 52 ;
-			letterspacing_button.width = 29;
-			letterspacing_button.height = 22;
+			addButton(letterspacing_button);
 			letterspacing_button.label = "";
-			letterspacing_button.labelPlacement = ButtonLabelPlacement.RIGHT;
 			letterspacing_button.setStyle("icon", Icon19);
 
-
-
-
-
-
-
-			addChild(imgAdd_button);
-			imgAdd_button.x = 460.9;
-			imgAdd_button.y = 52 ;
-			imgAdd_button.width = 29;
-			imgAdd_button.height = 22;
+			addButton(imgAdd_button);
 			imgAdd_button.label = "";
-			imgAdd_button.labelPlacement = ButtonLabelPlacement.RIGHT;
 			imgAdd_button.setStyle("icon", Icon20);
 
-
-
-
-
-
-
-			addChild(specialCharBut);
-			specialCharBut.x = 491.9;
-			specialCharBut.y = 52 ;
-			specialCharBut.width = 29;
-			specialCharBut.height = 22;
-			specialCharBut.label = "§"
+			addButton(specialCharBut);
+			specialCharBut.label = "";
 			
-			
-			
-			 
-			    
-			 
-			;
-			addChild(formatParagraphBut);
-			formatParagraphBut.x = 392.9;
-			formatParagraphBut.y = 52 ;
-			formatParagraphBut.width = 29;
-			formatParagraphBut.height = 22;
-			formatParagraphBut.label = "¶"
-			
-			
-			
-			 ;
-			//end of layer 1
-
-
-
+			addButton(formatParagraphBut);
+			formatParagraphBut.label = "";
+			//////////////////////////////////////////////////////
+			//                end of layer 1                    //
+			//////////////////////////////////////////////////////
 
 			addChild(FindBackground);
 			FindBackground.x = 0;
@@ -740,504 +423,178 @@ private var imgTargetLabel:TextField = new TextField();
 			FindBackground.visible = true;
 			FindBackground.label = "";
 			FindBackground.enabled = false;
+			//////////////////////////////////////////////////////
+			//                end of layer 2                    //
+			//////////////////////////////////////////////////////
 
-
-			//end of layer 2
-
-
-
-
-			addChild(findLabel);
-			findLabel.x = 6;
-			findLabel.y = 56 ;
-			findLabel.width = 30;
-			findLabel.height = 22;
-			findLabel.text = "Find";
+			mCurrentX = 6;
+			mCurrentY = 56;
+			addButton(findLabel, 30);
+			findLabel.text = Config.FIND_BUTTON_PROMPT;
 			findLabel.setTextFormat(labeltextformat);
 
+			addButton(findTxt, 140);
 
-
-			addChild(findTxt);
-			findTxt.x = 37.5;
-			findTxt.y = 56 ;
-			findTxt.width = 140;
-			findTxt.height = 22;
-
-
-
-			addChild(replaceLabel);
-			replaceLabel.x = 184;
-			replaceLabel.y = 56 ;
-			replaceLabel.width = 44;
-			replaceLabel.height = 22;
-			replaceLabel.text = "Replace";
+			addButton(replaceLabel, 44);
+			replaceLabel.text = Config.REPLACE_PROMPT;
 			replaceLabel.setTextFormat(labeltextformat);
 
+			addButton(replaceTxt, 140);
 
+			addButton(findNextBut, 59);
+			findNextBut.label = Config.FIND_NEXT_PROMPT;
 
-			addChild(replaceTxt);
-			replaceTxt.x = 228.5;
-			replaceTxt.y = 56 ;
-			replaceTxt.width = 140;
-			replaceTxt.height = 22;
+			addButton(replaceBut, 59);
+			replaceBut.label = Config.REPLACE_PROMPT;
+			//////////////////////////////////////////////////////
+			//                end of layer 3                    //
+			//////////////////////////////////////////////////////
 
+			mCurrentX = 6;
+			mCurrentY = 56;
 
-
-
-
-
-
-			addChild(findNextBut);
-			findNextBut.x = 378;
-			findNextBut.y = 56 ;
-			findNextBut.width = 59;
-			findNextBut.height = 22;
-			findNextBut.label = "Find Next";
-
-
-
-
-
-
-			addChild(replaceBut);
-			replaceBut.x = 445;
-			replaceBut.y = 56 ;
-			replaceBut.width = 59;
-			replaceBut.height = 22;
-			replaceBut.label = "Replace";
-
-
-
-			//end of layer 3
-
-
-
-
-
-
-
-
-			addChild(linkLabel);
-			linkLabel.x = 5;
-			linkLabel.y = 56 ;
-			linkLabel.width = 26;
-			linkLabel.height = 22;
+			addButton(linkLabel, 26);
 			linkLabel.text = "Link";
 			linkLabel.setTextFormat(labeltextformat);
 
+			addButton(linkTxt, 131);
 
+			addButton(window_cb, 77);
 
-
-
-			addChild(linkTxt);
-			linkTxt.x = 30.5;
-			linkTxt.y = 56 ;
-			linkTxt.width = 131;
-			linkTxt.height = 22;
-
-
-
-
-
-
-
-			addChild(window_cb);
-			window_cb.x = 165;
-			window_cb.y = 56 ;
-			window_cb.width = 77;
-			window_cb.height = 22;
-
-
-
-
-			addChild(changecolorTick);
-			changecolorTick.x = 240;
-			changecolorTick.y = 56 ;
-			changecolorTick.width = 100;
-			changecolorTick.height = 22;
+			addButton(changecolorTick, 100);
 			changecolorTick.label="Change Color";
 			changecolorTick.enabled = true;
 
+			addButton(linkColorPicker, 24);
 
-
-
-
-
-			addChild(linkColorPicker);
-			linkColorPicker.x = 341;
-			linkColorPicker.y = 56 ;
-			linkColorPicker.width = 24;
-			linkColorPicker.height = 22;
-			//linkColorPicker.enabled = false;
-
-
-
-			addChild(addunderlineTick);
-			addunderlineTick.x = 366.6;
-			addunderlineTick.y = 56 ;
-			addunderlineTick.width = 100;
-			addunderlineTick.height = 22;
+			addButton(addunderlineTick, 100);
 			addunderlineTick.label="Add Underline";
 			addunderlineTick.enabled = true;
 
 
-
-
-
-
-			addChild(hyperlink_button);
-			hyperlink_button.x = 485;
-			hyperlink_button.y = 56 ;
-			hyperlink_button.width = 30;
-			hyperlink_button.height = 22;
-			hyperlink_button.label = "<>"
+			addButton(hyperlink_button, 30);
+			hyperlink_button.label = "<>";
+			//////////////////////////////////////////////////////
+			//                end of layer 4                    //
+			//////////////////////////////////////////////////////
 			
+			mCurrentX = 3;
+			mCurrentY = 56;
 			
-			 
+			addButton(Char1, 22);
+			Char1.label = "";
 			
+			addButton(Char2, 22);
+			Char2.label = "";
 			
+			addButton(Char3, 22);
+			Char3.label = "";
 			
-			 
-			 
-			 ;
-			//end of layer 4
-
-
-
-
-			addChild(Char1);
-			Char1.x = 7;
-			Char1.y = 56 ;
-			Char1.width = 22;
-			Char1.height = 22;
-			Char1.label = "€"
+			addButton(Char4, 22);
+			Char4.label = "";
 			
+			addButton(Char5, 22);
+			Char5.label = "";
 			  
-			   
+			addButton(Char6, 22);
+			Char6.label = "";
 			
-			;
-			addChild(Char2);
-			Char2.x = 30;
-			Char2.y = 56 ;
-			Char2.width = 22;
-			Char2.height = 22;
-			Char2.label = "©"
+			addButton(Char7, 22);
+			Char7.label = "";
 			
+			addButton(Char8, 22);
+			Char8.label = "";
 			
-			;
-			addChild(Char3);
-			Char3.x = 53;
-			Char3.y = 56 ;
-			Char3.width = 22;
-			Char3.height = 22;
-			Char3.label = "®"
+			addButton(Char9, 22);
+			Char9.label = "";
 			
+			addButton(Char10, 22);
+			Char10.label = "";
+			
+			addButton(Char11, 22);
+			Char11.label = "";
+			
+			addButton(Char12, 22);
+			Char12.label = "";
+			
+			addButton(Char13, 22);
+			Char13.label = "";
+			
+			addButton(Char14, 22);
+			Char14.label = "";
+			
+			addButton(Char15, 22);
+			Char15.label = "";
+			
+			addButton(Char16, 22);
+			Char16.label = "";
+			
+			addButton(Char17, 22);
+			Char17.label = "";
+			
+			addButton(Char18, 22);
+			Char18.label = "";
 			  
-			 
-			 
-			;
-			addChild(Char4);
-			Char4.x = 76;
-			Char4.y = 56 ;
-			Char4.width = 22;
-			Char4.height = 22;
-			Char4.label = "£"
+			addButton(Char19, 22);
+			Char19.label = "";
 			
-			  
-			 
-			  ;
-			addChild(Char5);
-			Char5.x = 99;
-			Char5.y = 56 ;
-			Char5.width = 22;
-			Char5.height = 22;
-			Char5.label = "¢"
+			addButton(Char20, 22);
+			Char20.label = "";
 			
-			  
-			 
-			  ;
-			addChild(Char6);
-			Char6.x = 122;
-			Char6.y = 56 ;
-			Char6.width = 22;
-			Char6.height = 22;
-			Char6.label = "«"
-			
-			   
-			 ;
-			addChild(Char7);
-			Char7.x = 146;
-			Char7.y = 56 ;
-			Char7.width = 22;
-			Char7.height = 22;
-			Char7.label = "»"
-			;
-			addChild(Char8);
-			Char8.x = 170 ;
-			Char8.y = 56 ;
-			Char8.width = 22;
-			Char8.height = 22;
-			Char8.label = "¦"
-			
-			    
-			 ;
-			addChild(Char9);
-			Char9.x =  193;
-			Char9.y = 56 ;
-			Char9.width = 22;
-			Char9.height = 22;
-			Char9.label = "¤"
-			
-			    
-			;
-			addChild(Char10);
-			Char10.x = 216;
-			Char10.y = 56 ;
-			Char10.width = 22;
-			Char10.height = 22;
-			Char10.label = "¶"
-			
-			    
-			 
-			    
-			;
-			addChild(Char11);
-			Char11.x = 239 ;
-			Char11.y = 56 ;
-			Char11.width = 22;
-			Char11.height = 22;
-			Char11.label = "¯"
-			
-			    
-			 
-			 
-			 ;
-			addChild(Char12);
-			Char12.x = 262 ;
-			Char12.y = 56 ;
-			Char12.width = 22;
-			Char12.height = 22;
-			Char12.label = "°"
-			
-			    
-			;
-			addChild(Char13);
-			Char13.x = 285 ;
-			Char13.y = 56 ;
-			Char13.width = 22;
-			Char13.height = 22;
-			Char13.label = "±"
-			
-			    
-			   ;
-			addChild(Char14);
-			Char14.x = 308 ;
-			Char14.y = 56 ;
-			Char14.width = 22;
-			Char14.height = 22;
-			Char14.label = "²"
-			
-			    
-			;
-			addChild(Char15);
-			Char15.x =  332;
-			Char15.y = 56 ;
-			Char15.width = 22;
-			Char15.height = 22;
-			Char15.label = "³"
-			
-			    
-			   ;
-			addChild(Char16);
-			Char16.x = 355 ;
-			Char16.y = 56 ;
-			Char16.width = 22;
-			Char16.height = 22;
-			Char16.label = "Þ"
-			
-			    
-			  ;
-			addChild(Char17);
-			Char17.x =  379;
-			Char17.y = 56 ;
-			Char17.width = 22;
-			Char17.height = 22;
-			Char17.label = "µ"
-			
-			    
-			  ;
-			addChild(Char18);
-			Char18.x = 402 ;
-			Char18.y = 56 ;
-			Char18.width = 22;
-			Char18.height = 22;
-			Char18.label = "ß"
-			
-			    
-			 
-			  ;
-			addChild(Char19);
-			Char19.x = 425 ;
-			Char19.y = 56 ;
-			Char19.width = 22;
-			Char19.height = 22;
-			Char19.label = "Ø"
-			
-			    
-			 
-			  ;
-			addChild(Char20);
-			Char20.x = 448 ;
-			Char20.y = 56 ;
-			Char20.width = 22;
-			Char20.height = 22;
-			Char20.label = "§"
-			
-			    
-			  ;
-			addChild(charBackBut);
-			charBackBut.x = 475 ;
-			charBackBut.y = 56 ;
-			charBackBut.width = 39;
-			charBackBut.height = 22;
-			charBackBut.label = "Back"
-			
-			    
-			 ;
-			//end of layer 5
+			addButton(charBackBut, 39);
+			charBackBut.label = "Back";
+			//////////////////////////////////////////////////////
+			//                end of layer 5                    //
+			//////////////////////////////////////////////////////
 
+			mCurrentX = 5;
+			mCurrentY = 56;
 
-
-
-
-
-
-
-
-
-			addChild(indentLabel);
-			indentLabel.x = 5;
-			indentLabel.y = 56 ;
-			indentLabel.width = 41;
-			indentLabel.height = 22;
+			addButton(indentLabel, 41);
 			indentLabel.text = "Indent";
-			//indentLabel.embedFonts = true;
-			//indentLabel.defaultTextFormat = labeltextformat;
 			indentLabel.setTextFormat(labeltextformat);
 
-
-
-
-
-
-			indStepper.x = 41;
-			indStepper.y = 56 ;
-			indStepper.width = 50;
-			indStepper.height = 22;
+			addButton(indStepper, 50); //X 41
 			indStepper.stepSize = 1;
 			indStepper.minimum = 0;
 			indStepper.maximum = 1200;
 			indStepper.value = 0;
-			addChild(indStepper);
 
-
-
-
-			addChild(lineLabel);
-			lineLabel.x = 101;
-			lineLabel.y = 56 ;
-			lineLabel.width = 70;
-			lineLabel.height = 22;
+			addButton(lineLabel, 70); // X 101
 			lineLabel.text = "Line Spacing";
 			lineLabel.setTextFormat(labeltextformat);
 
-
-
-
-			lineStepper.x = 166;
-			lineStepper.y = 56 ;
-			lineStepper.width = 50;
-			lineStepper.height = 22;
+			addButton(lineStepper, 50); // X 166
 			lineStepper.stepSize = 1;
 			lineStepper.minimum = 0;
 			lineStepper.maximum = 1200;
 			lineStepper.value = 2;
-			addChild(lineStepper);
 
-
-
-
-
-
-
-			addChild(leftindLabel);
-			leftindLabel.x = 225;
-			leftindLabel.y = 56 ;
-			leftindLabel.width = 65;
-			leftindLabel.height = 22;
+			addButton(leftindLabel, 65); // X 225
 			leftindLabel.text = "Left Margin";
 			leftindLabel.setTextFormat(labeltextformat);
 
-
-
-			lMarginStepper.x = 287;
-			lMarginStepper.y = 56 ;
-			lMarginStepper.width = 50;
-			lMarginStepper.height = 22;
+			addButton(lMarginStepper, 50); // X 287
 			lMarginStepper.stepSize = 1;
 			lMarginStepper.minimum = 0;
 			lMarginStepper.maximum = 1200;
 			lMarginStepper.value = 0;
-			addChild(lMarginStepper);
 
-
-
-
-
-
-
-
-
-			addChild(rightindLabel);
-			rightindLabel.x = 343;
-			rightindLabel.y = 56 ;
-			rightindLabel.width = 72;
-			rightindLabel.height = 22;
+			addButton(rightindLabel, 72); // X 343
 			rightindLabel.text = "Right Margin";
 			rightindLabel.setTextFormat(labeltextformat);
 
-
-
-			rMarginStepper.x = 414;
-			rMarginStepper.y = 56 ;
-			rMarginStepper.width = 50;
-			rMarginStepper.height = 22;
-
+			addButton(rMarginStepper, 50); // X 414
 			rMarginStepper.stepSize = 1;
 			rMarginStepper.minimum = 0;
 			rMarginStepper.maximum = 1200;
 			rMarginStepper.value = 0;
-			addChild(rMarginStepper);
 
-
-
-
-
-
-
-			addChild(paraBackBut);
-			paraBackBut.x = 475 ;
-			paraBackBut.y = 56 ;
-			paraBackBut.width = 39;
-			paraBackBut.height = 22;
-			paraBackBut.label = "Back"
-			
-			
-			  
-			 ;
-			//end of layer 6
-
-
+			addButton(paraBackBut, 39); // X 475
+			paraBackBut.label = "Back";
+			//////////////////////////////////////////////////////
+			//                end of layer 6                    //
+			//////////////////////////////////////////////////////
 
 
 			addChild(charSpaceminLabel);
@@ -1252,9 +609,6 @@ private var imgTargetLabel:TextField = new TextField();
 			charSpaceminLabel.setTextFormat(labeltextformat);
 
 
-
-
-
 			addChild(charSpaceminStepper);
 			charSpaceminStepper.x = 150;
 			charSpaceminStepper.y = 56 ;
@@ -1266,257 +620,188 @@ private var imgTargetLabel:TextField = new TextField();
 			charSpaceminStepper.value = 0;
 
 
-
-
-
-///*addChild(charSpacemaxLabel);
-//			charSpacemaxLabel.x = 160;
-//			charSpacemaxLabel.y = 56 ;
-//			charSpacemaxLabel.width = 85;
-//			charSpacemaxLabel.height = 22;
-//			charSpacemaxLabel.text = "Decrease Line Spacing";
-//			charSpacemaxLabel.setTextFormat(labeltextformat);
-//
-//
-//
-//
-//			charSpacemaxStepper.x = 250;
-//			charSpacemaxStepper.y = 56 ;
-//			charSpacemaxStepper.width = 50;
-//			charSpacemaxStepper.height = 22;
-//			charSpacemaxStepper.stepSize = 1;
-//			charSpacemaxStepper.minimum = 0;
-//			charSpacemaxStepper.maximum = 1200;
-//			charSpacemaxStepper.value = 1;
-//			addChild(charSpacemaxStepper);
-//*/
-
-
-
 			addChild(charSpaceBackBut);
 			charSpaceBackBut.x = 475 ;
 			charSpaceBackBut.y = 56 ;
 			charSpaceBackBut.width = 39;
 			charSpaceBackBut.height = 22;
-			charSpaceBackBut.label = "Back"
-			
-			
-			;
+			charSpaceBackBut.label = "Back";
 
 			//end of layer 7
 
-
-
-
-
-
-
-addChild(imgBackBG);
-imgBackBG.x = 0;
-imgBackBG.y = 0 ;
-imgBackBG.width = 522;
-imgBackBG.height = 80;
-imgBackBG.visible = true;
-imgBackBG.label = "";
-imgBackBG.enabled = false;
-
-
-
-
-
-
-
-
-//end of layer 8
-
-
-
-
-addChild(imgLabel);
-imgLabel.x = 5;
-imgLabel.y = 2 ;
-imgLabel.width = 104;
-imgLabel.height = 22;
-imgLabel.text = "Image";
-//imgLabel.embedFonts = true;
-//imgLabel.defaultTextFormat = labeltextformat;
-imgLabel.setTextFormat(labeltextformat);
-
-
-
-addChild(imgIDLabel);
-imgIDLabel.x = 240;
-imgIDLabel.y = 2 ;
-imgIDLabel.width = 80;
-imgIDLabel.height = 22;
-imgIDLabel.text = "ID";
-//imgIDLabel.embedFonts = true;
-//imgIDLabel.defaultTextFormat = labeltextformat;
-imgIDLabel.setTextFormat(labeltextformat);
-
-
-addChild(imgAlignLabel);
-imgAlignLabel.x = 344;
-imgAlignLabel.y = 2 ;
-imgAlignLabel.width = 104;
-imgAlignLabel.height = 22;
-imgAlignLabel.text = "Align";
-//imgAlignLabel.embedFonts = true;
-//imgAlignLabel.defaultTextFormat = labeltextformat;
-imgAlignLabel.setTextFormat(labeltextformat);
-
-
-addChild(imgWidthLabel);
-imgWidthLabel.x = 5;
-imgWidthLabel.y = 28 ;
-imgWidthLabel.width = 104;
-imgWidthLabel.height = 22;
-imgWidthLabel.text = "Width";
-//imgWidthLabel.embedFonts = true;
-//imgWidthLabel.defaultTextFormat = labeltextformat;
-imgWidthLabel.setTextFormat(labeltextformat);
-
-
-addChild(imgHeightLabel);
-imgHeightLabel.x = 138;
-imgHeightLabel.y = 28 ;
-imgHeightLabel.width = 104;
-imgHeightLabel.height = 22;
-imgHeightLabel.text = "Height";
-//imgHeightLabel.embedFonts = true;
-//imgHeightLabel.defaultTextFormat = labeltextformat;
-imgHeightLabel.setTextFormat(labeltextformat);
-
-
-addChild(imgHSpLabel);
-imgHSpLabel.x = 260;
-imgHSpLabel.y = 28 ;
-imgHSpLabel.width = 104;
-imgHSpLabel.height = 22;
-imgHSpLabel.text = "H-Space";
-//imgHSpLabel.embedFonts = true;
-//imgHSpLabel.defaultTextFormat = labeltextformat;
-imgHSpLabel.setTextFormat(labeltextformat);
-
-
-addChild(imgVSpLabel);
-imgVSpLabel.x = 378;
-imgVSpLabel.y = 28 ;
-imgVSpLabel.width = 104;
-imgVSpLabel.height = 22;
-imgVSpLabel.text = "V-Space";
-//imgVSpLabel.embedFonts = true;
-//imgVSpLabel.defaultTextFormat = labeltextformat;
-imgVSpLabel.setTextFormat(labeltextformat);
-
-
-addChild(imgURLLabel);
-imgURLLabel.x = 5;
-imgURLLabel.y = 54 ;
-imgURLLabel.width = 104;
-imgURLLabel.height = 22;
-imgURLLabel.text = "URL";
-//imgURLLabel.embedFonts = true;
-//imgURLLabel.defaultTextFormat = labeltextformat;
-imgURLLabel.setTextFormat(labeltextformat);
-
-
-addChild(imgTargetLabel);
-imgTargetLabel.x = 260;
-imgTargetLabel.y = 54 ;
-imgTargetLabel.width = 104;
-imgTargetLabel.height = 22;
-imgTargetLabel.text = "Target";
-//imgTargetLabel.embedFonts = true;
-//imgTargetLabel.defaultTextFormat = labeltextformat;
-imgTargetLabel.setTextFormat(labeltextformat);
-
-
-
-
-
-addChild(imgPathTxt);
-imgPathTxt.x = 60;
-imgPathTxt.y = 2 ;
-imgPathTxt.width = 170;
-imgPathTxt.height = 22;
-
+			addChild(imgBackBG);
+			imgBackBG.x = 0;
+			imgBackBG.y = 0 ;
+			imgBackBG.width = 522;
+			imgBackBG.height = 80;
+			imgBackBG.visible = true;
+			imgBackBG.label = "";
+			imgBackBG.enabled = false;
 			
-	
-addChild(imgIDTxt);
-imgIDTxt.x = 260;
-imgIDTxt.y = 2 ;
-imgIDTxt.width = 80;
-imgIDTxt.height = 22;
-
-
-
-
-addChild(imgAlignCb);
-imgAlignCb.x = 379;
-imgAlignCb.y = 2 ;
-imgAlignCb.width = 113;
-imgAlignCb.height = 22;
-
+			//end of layer 8
 			
 			
+			addChild(imgLabel);
+			imgLabel.x = 5;
+			imgLabel.y = 2 ;
+			imgLabel.width = 104;
+			imgLabel.height = 22;
+			imgLabel.text = "Image";
+			//imgLabel.embedFonts = true;
+			//imgLabel.defaultTextFormat = labeltextformat;
+			imgLabel.setTextFormat(labeltextformat);
 			
-addChild(imgWidthTxt);
-imgWidthTxt.x = 58;
-imgWidthTxt.y = 28 ;
-imgWidthTxt.width = 67;
-imgWidthTxt.height = 22;
-
-			
-			
-addChild(imgHeightTxt);
-imgHeightTxt.x = 183;
-imgHeightTxt.y = 28 ;
-imgHeightTxt.width = 67;
-imgHeightTxt.height = 22;
-
-			
-			
-addChild(imgHSNs);
-imgHSNs.x = 308;
-imgHSNs.y = 28 ;
-imgHSNs.width = 67;
-imgHSNs.height = 22;
-imgHSNs.stepSize = 1;
-imgHSNs.minimum = 0;
-imgHSNs.maximum = 1200;
-imgHSNs.value = 0;
-			
-
+			addChild(imgIDLabel);
+			imgIDLabel.x = 240;
+			imgIDLabel.y = 2 ;
+			imgIDLabel.width = 80;
+			imgIDLabel.height = 22;
+			imgIDLabel.text = "ID";
+			//imgIDLabel.embedFonts = true;
+			//imgIDLabel.defaultTextFormat = labeltextformat;
+			imgIDLabel.setTextFormat(labeltextformat);
 			
 			
-addChild(imgVSNs);
-imgVSNs.x = 428;
-imgVSNs.y = 28 ;
-imgVSNs.width = 67;
-imgVSNs.height = 22;
-imgVSNs.stepSize = 1;
-imgVSNs.minimum = 0;
-imgVSNs.maximum = 1200;
-imgVSNs.value = 0;
-
-
+			addChild(imgAlignLabel);
+			imgAlignLabel.x = 344;
+			imgAlignLabel.y = 2 ;
+			imgAlignLabel.width = 104;
+			imgAlignLabel.height = 22;
+			imgAlignLabel.text = "Align";
+			//imgAlignLabel.embedFonts = true;
+			//imgAlignLabel.defaultTextFormat = labeltextformat;
+			imgAlignLabel.setTextFormat(labeltextformat);
 			
 			
-addChild(imgURLTxt);
-imgURLTxt.x = 60;
-imgURLTxt.y = 53 ;
-imgURLTxt.width = 190;
-imgURLTxt.height = 22;
-
-
+			addChild(imgWidthLabel);
+			imgWidthLabel.x = 5;
+			imgWidthLabel.y = 28 ;
+			imgWidthLabel.width = 104;
+			imgWidthLabel.height = 22;
+			imgWidthLabel.text = "Width";
+			//imgWidthLabel.embedFonts = true;
+			//imgWidthLabel.defaultTextFormat = labeltextformat;
+			imgWidthLabel.setTextFormat(labeltextformat);
 			
-addChild(imgTargetCb);
-imgTargetCb.x = 301;
-imgTargetCb.y = 53 ;
-imgTargetCb.width = 110;
-imgTargetCb.height = 22;
-
+			
+			addChild(imgHeightLabel);
+			imgHeightLabel.x = 138;
+			imgHeightLabel.y = 28 ;
+			imgHeightLabel.width = 104;
+			imgHeightLabel.height = 22;
+			imgHeightLabel.text = "Height";
+			//imgHeightLabel.embedFonts = true;
+			//imgHeightLabel.defaultTextFormat = labeltextformat;
+			imgHeightLabel.setTextFormat(labeltextformat);
+			
+			
+			addChild(imgHSpLabel);
+			imgHSpLabel.x = 260;
+			imgHSpLabel.y = 28 ;
+			imgHSpLabel.width = 104;
+			imgHSpLabel.height = 22;
+			imgHSpLabel.text = "H-Space";
+			//imgHSpLabel.embedFonts = true;
+			//imgHSpLabel.defaultTextFormat = labeltextformat;
+			imgHSpLabel.setTextFormat(labeltextformat);
+			
+			
+			addChild(imgVSpLabel);
+			imgVSpLabel.x = 378;
+			imgVSpLabel.y = 28 ;
+			imgVSpLabel.width = 104;
+			imgVSpLabel.height = 22;
+			imgVSpLabel.text = "V-Space";
+			//imgVSpLabel.embedFonts = true;
+			//imgVSpLabel.defaultTextFormat = labeltextformat;
+			imgVSpLabel.setTextFormat(labeltextformat);
+			
+			
+			addChild(imgURLLabel);
+			imgURLLabel.x = 5;
+			imgURLLabel.y = 54 ;
+			imgURLLabel.width = 104;
+			imgURLLabel.height = 22;
+			imgURLLabel.text = "URL";
+			//imgURLLabel.embedFonts = true;
+			//imgURLLabel.defaultTextFormat = labeltextformat;
+			imgURLLabel.setTextFormat(labeltextformat);
+			
+			
+			addChild(imgTargetLabel);
+			imgTargetLabel.x = 260;
+			imgTargetLabel.y = 54 ;
+			imgTargetLabel.width = 104;
+			imgTargetLabel.height = 22;
+			imgTargetLabel.text = "Target";
+			//imgTargetLabel.embedFonts = true;
+			//imgTargetLabel.defaultTextFormat = labeltextformat;
+			imgTargetLabel.setTextFormat(labeltextformat);
+			
+			addChild(imgPathTxt);
+			imgPathTxt.x = 60;
+			imgPathTxt.y = 2 ;
+			imgPathTxt.width = 170;
+			imgPathTxt.height = 22;
+				
+			addChild(imgIDTxt);
+			imgIDTxt.x = 260;
+			imgIDTxt.y = 2 ;
+			imgIDTxt.width = 80;
+			imgIDTxt.height = 22;
+			
+			
+			addChild(imgAlignCb);
+			imgAlignCb.x = 379;
+			imgAlignCb.y = 2 ;
+			imgAlignCb.width = 113;
+			imgAlignCb.height = 22;
+			
+			addChild(imgWidthTxt);
+			imgWidthTxt.x = 58;
+			imgWidthTxt.y = 28 ;
+			imgWidthTxt.width = 67;
+			imgWidthTxt.height = 22;
+			
+			addChild(imgHeightTxt);
+			imgHeightTxt.x = 183;
+			imgHeightTxt.y = 28 ;
+			imgHeightTxt.width = 67;
+			imgHeightTxt.height = 22;
+			
+						
+			addChild(imgHSNs);
+			imgHSNs.x = 308;
+			imgHSNs.y = 28 ;
+			imgHSNs.width = 67;
+			imgHSNs.height = 22;
+			imgHSNs.stepSize = 1;
+			imgHSNs.minimum = 0;
+			imgHSNs.maximum = 1200;
+			imgHSNs.value = 0;
+						
+			
+			addChild(imgVSNs);
+			imgVSNs.x = 428;
+			imgVSNs.y = 28 ;
+			imgVSNs.width = 67;
+			imgVSNs.height = 22;
+			imgVSNs.stepSize = 1;
+			imgVSNs.minimum = 0;
+			imgVSNs.maximum = 1200;
+			imgVSNs.value = 0;
+						
+			addChild(imgURLTxt);
+			imgURLTxt.x = 60;
+			imgURLTxt.y = 53 ;
+			imgURLTxt.width = 190;
+			imgURLTxt.height = 22;
+			
+			addChild(imgTargetCb);
+			imgTargetCb.x = 301;
+			imgTargetCb.y = 53 ;
+			imgTargetCb.width = 110;
+			imgTargetCb.height = 22;
 
 			addChild(imgBackBt);
 			imgBackBt.x = 420 ;
@@ -1524,127 +809,136 @@ imgTargetCb.height = 22;
 			imgBackBt.width = 75;
 			imgBackBt.height = 22;
 			imgBackBt.label = "Insert Image";
-
-
-
-//end of layer 9
-
-
-
+			//end of layer 9
+		}
+		
+		private function addButton(theButton:DisplayObject, bWidth:Number = Config.BUTTON_WIDTH, bHeight:Number = Config.BUTTON_HEIGHT):void
+		{
+			addChild(theButton);
+			theButton.height = bHeight;
+			theButton.width = bWidth;
+			
+			theButton.x = mCurrentX;
+			theButton.y = mCurrentY;
+			
+			mCurrentX += (bWidth + Config.HORIZONTAL_PADDING);
+			if (mCurrentX >= Config.ROW_MAX_WIDTH)
+			{
+				mCurrentY += bHeight + Config.ROW_PADDING;
+				mCurrentX = 0;
+			}
+		}
+		
+		private function HideAllRow():void 
+		{
+			Hide1stRow();
+			Hide2ndRow();
+			Hide3rdRow();
+			imgBackBG.visible = true;
+		}
+		
+		
+		private function ShowAllRow():void 
+		{
+			Show1stRow();
+			Show2ndRow();
+			Show3rdRow();
+			imgBackBG.visible = false;
+			HideimgTab();
+			
+		}
+		
+		private function Hide1stRow():void 
+		{
+			
+			font_cb.visible = false;
+			size_cb.visible = false;
+			bold_button.visible = false;
+			italic_button.visible = false;
+			underline_button.visible = false;
+			fontColorPicker.visible = false;
+			sizeUpButton.visible = false;
+			sizeDownButton.visible = false;
+		}
+	
+		private function Show1stRow():void 
+		{
+			font_cb.visible = true;
+			size_cb.visible = true;
+			bold_button.visible = true;
+			italic_button.visible = true;
+			underline_button.visible = true;
+			fontColorPicker.visible = true;
+			sizeUpButton.visible = true;
+			sizeDownButton.visible = true;		
+		}
+		
+		private function Hide2ndRow():void 
+		{
+			//style_cb.visible = false;
+			viewHTML.visible = false;
+			hyperlinkActive.visible = false;
+			findActive.visible = false;
+			
+		}
+		private function Show2ndRow():void 
+		{
+			//style_cb.visible = true;
+			viewHTML.visible = true;
+			hyperlinkActive.visible = true;
+			findActive.visible = true;
+		}
+		
+		private function ShowimgTab():void 
+		{
+			imgPathTxt.visible = true;
+			imgIDTxt.visible = true;
+			imgAlignCb.visible = true;
+			imgWidthTxt.visible = true;
+			imgHeightTxt.visible = true;
+			imgHSNs.visible = true;
+			imgVSNs.visible = true;
+			imgURLTxt.visible = true;
+			imgTargetCb.visible = true;
+			imgBackBt.visible = true;
+			imgLabel.visible = true;
+			imgIDLabel.visible = true;
+			imgAlignLabel.visible = true;
+			imgWidthLabel.visible = true;
+			imgHeightLabel.visible = true;
+			imgHSpLabel.visible = true;
+			imgVSpLabel.visible = true;
+			imgURLLabel.visible = true;
+			imgTargetLabel.visible = true;
+			imgBackBG.visible = true;
+		
+		}
+		
+		
+		private function HideimgTab():void {
+			imgPathTxt.visible = false;
+			imgIDTxt.visible = false;
+			imgAlignCb.visible = false;
+			imgWidthTxt.visible = false;
+			imgHeightTxt.visible = false;
+			imgHSNs.visible = false;
+			imgVSNs.visible = false;
+			imgURLTxt.visible = false;
+			imgTargetCb.visible = false;
+			imgBackBt.visible = false;
+			imgLabel.visible = false;
+			imgIDLabel.visible = false;
+			imgAlignLabel.visible = false;
+			imgWidthLabel.visible = false;
+			imgHeightLabel.visible = false;
+			imgHSpLabel.visible = false;
+			imgVSpLabel.visible = false;
+			imgURLLabel.visible = false;
+			imgTargetLabel.visible = false;
+			imgBackBG.visible = false;
 		}
 
-
-
-
-
-private function HideAllRow():void {
-	Hide1stRow();
-	Hide2ndRow();
-	Hide3rdRow();
-	imgBackBG.visible = true;
-}
-
-
-private function ShowAllRow():void {
-	Show1stRow();
-	Show2ndRow();
-	Show3rdRow();
-	imgBackBG.visible = false;
-	HideimgTab();
-	
-}
-
-private function Hide1stRow():void {
-	
-font_cb.visible = false;
-size_cb.visible = false;
-bold_button.visible = false;
-italic_button.visible = false;
-underline_button.visible = false;
-fontColorPicker.visible = false;
-sizeUp_button.visible = false;
-sizeDown_button.visible = false;
-}
-private function Show1stRow():void {
-font_cb.visible = true;
-size_cb.visible = true;
-bold_button.visible = true;
-italic_button.visible = true;
-underline_button.visible = true;
-fontColorPicker.visible = true;
-sizeUp_button.visible = true;
-sizeDown_button.visible = true;
-	
-}
-
-private function Hide2ndRow():void {
-//style_cb.visible = false;
-viewHTML.visible = false;
-hyperlinkActive.visible = false;
-findActive.visible = false;
-	
-}
-private function Show2ndRow():void {
-//style_cb.visible = true;
-viewHTML.visible = true;
-hyperlinkActive.visible = true;
-findActive.visible = true;
-	
-}
-
-private function ShowimgTab():void {
-imgPathTxt.visible = true;
-imgIDTxt.visible = true;
-imgAlignCb.visible = true;
-imgWidthTxt.visible = true;
-imgHeightTxt.visible = true;
-imgHSNs.visible = true;
-imgVSNs.visible = true;
-imgURLTxt.visible = true;
-imgTargetCb.visible = true;
-imgBackBt.visible = true;
-imgLabel.visible = true;
-imgIDLabel.visible = true;
-imgAlignLabel.visible = true;
-imgWidthLabel.visible = true;
-imgHeightLabel.visible = true;
-imgHSpLabel.visible = true;
-imgVSpLabel.visible = true;
-imgURLLabel.visible = true;
-imgTargetLabel.visible = true;
-imgBackBG.visible = true;
-
-}
-
-
-private function HideimgTab():void {
-imgPathTxt.visible = false;
-imgIDTxt.visible = false;
-imgAlignCb.visible = false;
-imgWidthTxt.visible = false;
-imgHeightTxt.visible = false;
-imgHSNs.visible = false;
-imgVSNs.visible = false;
-imgURLTxt.visible = false;
-imgTargetCb.visible = false;
-imgBackBt.visible = false;
-imgLabel.visible = false;
-imgIDLabel.visible = false;
-imgAlignLabel.visible = false;
-imgWidthLabel.visible = false;
-imgHeightLabel.visible = false;
-imgHSpLabel.visible = false;
-imgVSpLabel.visible = false;
-imgURLLabel.visible = false;
-imgTargetLabel.visible = false;
-imgBackBG.visible = false;
-
-}
-
-
-
 		private function Hide3rdRow():void {
-
 			leftIndentBut.visible = false;
 			rightIndentBut.visible= false;
 			l_button.visible= false;
@@ -1661,8 +955,6 @@ imgBackBG.visible = false;
 			imgAdd_button.visible= false;
 			specialCharBut.visible= false;
 			formatParagraphBut.visible= false;
-
-
 		}
 
 		private function Show3rdRow():void {
@@ -1700,12 +992,10 @@ imgBackBG.visible = false;
 			hideLinkElements();
 			hideParagraphtab();
 			EnableListeners();
-
-
 		}
-		private function showCharSpacetab():void {
-
-
+		
+		private function showCharSpacetab():void 
+		{
 			charSpaceBackBut.visible = true;
 			charSpacemaxStepper.visible =  true;
 			charSpacemaxLabel.visible =  true;
@@ -1713,12 +1003,10 @@ imgBackBG.visible = false;
 			charSpaceminLabel.visible =  true;
 			Hide3rdRow();
 			FindBackground.visible = true;
-
-
 		}
-		private function hideCharSpacetab():void {
-
-
+		
+		private function hideCharSpacetab():void
+		{
 			charSpaceBackBut.visible = false;
 			charSpacemaxStepper.visible = false;
 			charSpacemaxLabel.visible = false;
@@ -1726,14 +1014,11 @@ imgBackBG.visible = false;
 			charSpaceminLabel.visible = false;
 			Show3rdRow();
 			FindBackground.visible = false;
-
-
 		}
 
 
-
-
-		private function hideChartab():void {
+		private function hideChartab():void 
+		{
 			Char1.visible = false;
 			Char2.visible = false;
 			Char3.visible = false;
@@ -1756,9 +1041,10 @@ imgBackBG.visible = false;
 			Char20.visible = false;
 			charBackBut.visible = false;
 			FindBackground.visible = false;
-
 		}
-		private function showChartab():void {
+		
+		private function showChartab():void 
+		{
 			Hide3rdRow();
 			Char1.visible = true;
 			Char2.visible = true;
@@ -1783,7 +1069,9 @@ imgBackBG.visible = false;
 			charBackBut.visible = true;
 			FindBackground.visible = true;
 		}
-		private function SetTextField():void {
+		
+		private function SetTextField():void 
+		{
 
 			/* set the text field parameters so that the text field has a border, 
 			   word wrap and multiline enabled, and set it to an input text field so users can modify the text. */
@@ -1796,12 +1084,12 @@ imgBackBG.visible = false;
 			input_txt.alwaysShowSelection = true;
 			input_txt.backgroundColor = 0xFFFFFF;
 			input_txt.doubleClickEnabled = true;*/
-			// enter some fake text into the input_txt text field on the Stage.
+			// enter some fake text into the input_txt text field on the Stage. 
 			//input_txt.htmlText='Enter your text here.';
-
 		}
-		private function PopulateDropdown():void {
-
+		
+		private function PopulateDropdown():void 
+		{
 			// populate the instances on the Stage.
 			font_cb.labelField = "fontName";
 			font_cb.dropdown.iconField = null;
@@ -1822,10 +1110,10 @@ imgBackBG.visible = false;
 			
 			imgTargetCb.dropdown.iconField = null;
 			imgTargetCb.dataProvider = new DataProvider(["_blank", "_self","_parent"]);
-
-
 		}
-		private function changeFindButtonToggle():void {
+		
+		private function changeFindButtonToggle():void 
+		{
 			if (isActive == true) {
 
 				isActive = false;
@@ -1834,15 +1122,15 @@ imgBackBG.visible = false;
 				findActive.setStyle("icon", Icon15);
 				hyperlinkActive.enabled = false;
 				viewHTML.enabled = false;
-
-			} else {
+			}
+			else
+			{
 				isActive = true;
 				findActive.label = "Open Find Tab";
 				hyperlinkActive.enabled = true;
 				viewHTML.enabled = true;
 				findActive.labelPlacement = ButtonLabelPlacement.RIGHT;
 				findActive.setStyle("icon", Icon15);
-
 			}
 		}
 
@@ -1916,28 +1204,15 @@ imgBackBG.visible = false;
 			changecolorTick.visible = false;
 			addunderlineTick.visible = false;
 			linkColorPicker.visible = false;
-
-
 		}
 
-
-		private function toggleLinkButton():void {
-
-			if (hyperlinkActive.label == "Open Link Tab") {
-
-
-				hyperlinkActive.label = "Close Link Tab";
-
-
-			} else if (hyperlinkActive.label == "Close Link Tab") {
-				hyperlinkActive.label = "Open Link Tab";
-
-
-			}
+		private function toggleLinkButton():void 
+		{
+			if (hyperlinkActive.label == Config.CLOSE_HYPER_LINK_PROMPT)
+				hyperlinkActive.label = Config.OPEN_HYPER_LINK_PROMPT;
+			else
+				hyperlinkActive.label = Config.CLOSE_HYPER_LINK_PROMPT;
 		}
-
-
-
 
 		private function colorHTML():void {
 			var searchString1:String;
@@ -1952,7 +1227,6 @@ imgBackBG.visible = false;
 			searchString2 = ">";
 			//trace(input_txt.text);
 
-
 			var colorformat:TextFormat = new TextFormat();
 			colorformat.font = "Verdana";
 			colorformat.color = 0xff0000;
@@ -1960,11 +1234,10 @@ imgBackBG.visible = false;
 			colorformat.underline = false;
 
 
-			do {
-
+			do 
+			{
 				initialPoint = input_txt.text.indexOf(searchString1, lastIndexTillSearched);
 				finalpoint = input_txt.text.indexOf(searchString2, lastIndexTillSearched)+1;
-
 
 				lastIndexTillSearched = finalpoint;
 				//trace(initialPoint +"  "+finalpoint+" /"+textLength);
@@ -1975,17 +1248,13 @@ imgBackBG.visible = false;
 					input_txt.setTextFormat(colorformat, initialPoint, finalpoint);
 				}
 			} while (i >= 0 && i < textLength );
+			
+			
 			initialPoint = input_txt.text.indexOf(searchString1, lastIndexTillSearched);
 			finalpoint = input_txt.text.indexOf(searchString2, lastIndexTillSearched);
 			lastIndexTillSearched = finalpoint;
 			//trace(finalpoint);
-
-
 		}
-
-
-
-
 
 		private function hideParagraphtab():void {
 			indStepper.visible = false;
@@ -2002,6 +1271,7 @@ imgBackBG.visible = false;
 				Show3rdRow();
 			}
 		}
+		
 		private function showParagraphtab():void {
 
 			indStepper.value = 0;
@@ -2021,40 +1291,27 @@ imgBackBG.visible = false;
 			rightindLabel.visible = true;
 			FindBackground.visible = true;
 			Hide3rdRow();
-
-
 		}
 
-
-
-
-
-
-
-		public function EnableListeners():void {
-
-
-
-
+		public function EnableListeners():void 
+		{
 			findActive.addEventListener(MouseEvent.CLICK, findWindowActivatorListener);
 			hyperlinkActive.addEventListener(MouseEvent.CLICK, hyperlinkListener);
-
 
 			addunderlineTick.addEventListener(MouseEvent.CLICK, addunderlineTickHandler);
 			changecolorTick.addEventListener(MouseEvent.CLICK, changecolorTickHandler);
 			linkColorPicker.addEventListener(ColorPickerEvent.CHANGE, linkColorPickerChangeHandler);
 
+			font_cb.addEventListener(Event.CHANGE, controlChangeListener);
+			size_cb.addEventListener(Event.CHANGE, controlChangeListener);
 
-			font_cb.addEventListener(Event.CHANGE, comboBoxChangeListener);
-			size_cb.addEventListener(Event.CHANGE, comboBoxChangeListener);
-			//window_cb.addEventListener(Event.CHANGE, comboBoxChangeListener);
 			bold_button.addEventListener(MouseEvent.CLICK, buttonClickListener);
 			underline_button.addEventListener(MouseEvent.CLICK, buttonClickListener);
 			hyperlink_button.addEventListener(MouseEvent.CLICK, hyperbuttonClickListener);
 
 			italic_button.addEventListener(MouseEvent.CLICK, buttonClickListener);
-			sizeUp_button.addEventListener(MouseEvent.CLICK, buttonClickListener);
-			sizeDown_button.addEventListener(MouseEvent.CLICK, buttonClickListener);
+			sizeUpButton.addEventListener(MouseEvent.CLICK, buttonClickListener);
+			sizeDownButton.addEventListener(MouseEvent.CLICK, buttonClickListener);
 			l_button.addEventListener(MouseEvent.CLICK,  buttonClickListener);
 			leftIndentBut.addEventListener(MouseEvent.CLICK,  buttonClickListener);
 			rightIndentBut.addEventListener(MouseEvent.CLICK,  buttonClickListener);
@@ -2064,7 +1321,6 @@ imgBackBG.visible = false;
 			justifiedAlign_button.addEventListener(MouseEvent.CLICK,  buttonClickListener);
 
 			imgAdd_button.addEventListener(MouseEvent.CLICK,  imgAdd_buttonListener);
-			//color_cb.addEventListener(Event.CHANGE, comboBoxChangeListener);
 			fontColorPicker.addEventListener(ColorPickerEvent.CHANGE, colorPickerChangeHandler);
 			replaceTxt.addEventListener(Event.CHANGE, updateReplaceTxt);
 			replaceBut.addEventListener(MouseEvent.CLICK, replaceListener);
@@ -2073,8 +1329,6 @@ imgBackBG.visible = false;
 			viewHTML.addEventListener(MouseEvent.CLICK, viewHTMLListener);
 			findTxt.addEventListener(Event.CHANGE, updateFindTxt);
 			findNextBut.addEventListener(MouseEvent.CLICK, findNextListener);
-
-
 
 			Char1.addEventListener(MouseEvent.CLICK, insertChar);
 			Char2.addEventListener(MouseEvent.CLICK, insertChar);
@@ -2097,14 +1351,13 @@ imgBackBG.visible = false;
 			Char19.addEventListener(MouseEvent.CLICK, insertChar);
 			Char20.addEventListener(MouseEvent.CLICK, insertChar);
 
-			indStepper.addEventListener(Event.CHANGE, changeOccurredIN);
-			lineStepper.addEventListener(Event.CHANGE, changeOccurredLE);
-			lMarginStepper.addEventListener(Event.CHANGE, changeOccurredLM);
-			rMarginStepper.addEventListener(Event.CHANGE, changeOccurredRM);
+			indStepper.addEventListener(Event.CHANGE, controlChangeListener);
+			lineStepper.addEventListener(Event.CHANGE, controlChangeListener);
+			lMarginStepper.addEventListener(Event.CHANGE, controlChangeListener);
+			rMarginStepper.addEventListener(Event.CHANGE, controlChangeListener);
 
 			formatParagraphBut.addEventListener(MouseEvent.CLICK, formatParagraphListener);
 			paraBackBut.addEventListener(MouseEvent.CLICK, paraBackButListener );
-
 
 			copy_button.addEventListener(MouseEvent.CLICK, copytoClipboard);
 			cut_button.addEventListener(MouseEvent.CLICK, cuttoClipboard);
@@ -2117,57 +1370,74 @@ imgBackBG.visible = false;
 			charSpaceBackBut.addEventListener(MouseEvent.CLICK, charSpaceBackButListener);
 			letterspacing_button.addEventListener(MouseEvent.CLICK,  letterspacing_buttonListener);
 			imgBackBt.addEventListener(MouseEvent.CLICK,  imgBackBtListener);
+			
+			addEventListener(KeyboardEvent.KEY_UP, keyUp);
+			addEventListener(KeyboardEvent.KEY_DOWN, keyDown);
 		}
 
+		private function keyUp(k:KeyboardEvent):void
+		{
+			//?????
+		}
 
-
-
+		private function keyDown(k:KeyboardEvent):void
+		{
+			if (k.ctrlKey)
+			{
+				switch(k.keyCode)
+				{
+					case Keyboard.C:
+						copytoClipboard(k);
+					break;
+					case Keyboard.X:
+						cuttoClipboard(k);
+					break;
+					case Keyboard.V:
+						pastefromClipboard(k);
+					break;
+					case Keyboard.B:
+						applyStyle(bold_button);
+					break;
+				}
+			}
+		}
 
 		//Listener Functions
-
 
 		private function imgBackBtListener(e:Event):void {
 			ShowAllRow();
 			
-			
-			
 			//var imageCode:String = "<img src = 'abc.jpg' id='abcd' >";
-			if(imgIDTxt.text == ""){
+			if(imgIDTxt.text == "")
+			{
 				incId = incId+1;
 				imgIDTxt.text = "default_id"+incId;
 				
 			}
-			if(imgPathTxt.text != ""){
 			
-			input_txt.replaceText (input_txt.selectionBeginIndex, input_txt.selectionEndIndex, '!##'); 
-			
-			HTMLtext.text = input_txt.htmlText;
-			initialPoint = HTMLtext.text.indexOf("!##", 0);
-			finalpoint = initialPoint+3;
-			if(imgURLTxt == null){
-			HTMLtext.replaceText (initialPoint, finalpoint,  "<img src = '"+imgPathTxt.text+"' id='"+imgIDTxt.text+"' align='"+imgAlignCb.value+"' hspace = '"+imgHSNs.value+"' vspace='"+imgVSNs.value+"' width='"+imgWidthTxt.text+"' height='"+imgHeightTxt.text+"'  >");
-			}else {
+			if(imgPathTxt.text != "")
+			{
 				
-			HTMLtext.replaceText (initialPoint, finalpoint,  "<a href='"+imgURLTxt.text+"' target='"+imgTargetCb.value+"' ><img src = '"+imgPathTxt.text+"' id='"+imgIDTxt.text+"' align='"+imgAlignCb.value+"' hspace = '"+imgHSNs.value+"' vspace='"+imgVSNs.value+"' width='"+imgWidthTxt.text+"' height='"+imgHeightTxt.text+"'  ></a>");
-	
-			}
-			//trace("<img src = '"+imgPathTxt.text+"' id='' align='"+imgAlignCb.value+"' hspace = '"+imgHSNs.value+"' vspace='"+imgVSNs.value+"' width='"+imgWidthTxt.text+"' height='"+imgHeightTxt.text+"'  >")
-			input_txt.htmlText =  HTMLtext.text;
-			} else {
+				input_txt.replaceText (input_txt.selectionBeginIndex, input_txt.selectionEndIndex, '!##'); 
 				
-				
-				
-			}
-			
-			
-			
-			
-			
+				HTMLtext.text = input_txt.htmlText;
+				initialPoint = HTMLtext.text.indexOf("!##", 0);
+				finalpoint = initialPoint+3;
+				if(imgURLTxt == null)
+				{
+					HTMLtext.replaceText (initialPoint, finalpoint,  "<img src = '"+imgPathTxt.text+"' id='"+imgIDTxt.text+"' align='"+imgAlignCb.value+"' hspace = '"+imgHSNs.value+"' vspace='"+imgVSNs.value+"' width='"+imgWidthTxt.text+"' height='"+imgHeightTxt.text+"'  >");
+				}
+				else
+				{
+					HTMLtext.replaceText (initialPoint, finalpoint,  "<a href='"+imgURLTxt.text+"' target='"+imgTargetCb.value+"' ><img src = '"+imgPathTxt.text+"' id='"+imgIDTxt.text+"' align='"+imgAlignCb.value+"' hspace = '"+imgHSNs.value+"' vspace='"+imgVSNs.value+"' width='"+imgWidthTxt.text+"' height='"+imgHeightTxt.text+"'  ></a>");
+				}
 
-			
+				input_txt.htmlText =  HTMLtext.text;
+			}
 		}
 		
-		private function imgAdd_buttonListener(e:Event):void {
+		private function imgAdd_buttonListener(e:Event):void 
+		{
 			imgIDTxt.text = "";
 			HideAllRow();
 			ShowimgTab();
@@ -2175,14 +1445,15 @@ imgBackBG.visible = false;
 		}
 		
 
-		private function letterspacing_buttonListener(e:Event):void {
-
+		private function letterspacing_buttonListener(e:Event):void 
+		{
 			showCharSpacetab();
 		}
-		private function charSpaceBackButListener(e:Event):void {
+		private function charSpaceBackButListener(e:Event):void 
+		{
 			hideCharSpacetab();
-
 		}
+		
 		/*private function charSpacemaxStepperListener(e:Event):void {
 
    				trace(charSpaceminStepper.value+"_____________________________")
@@ -2195,19 +1466,16 @@ imgBackBG.visible = false;
 
 			
 		}*/
-		private function charSpaceminStepperListener(e:Event):void {
-
-			
-			
+		private function charSpaceminStepperListener(e:Event):void 
+		{
 				var my_fmt:TextFormat = input_txt.getTextFormat(input_txt.selectionBeginIndex, input_txt.selectionEndIndex);
 
 				my_fmt.letterSpacing =  charSpaceminStepper.value;
 				
 				input_txt.setTextFormat(my_fmt, input_txt.selectionBeginIndex, input_txt.selectionEndIndex);
 				scroller.scrollTarget = input_txt;
-
-			
 		}
+		
 		private function removeFormatListener(e:Event):void {
 			//trace("clear");
 			var clear_fmt:TextFormat = new TextFormat ();
@@ -2226,8 +1494,6 @@ imgBackBG.visible = false;
 			clear_fmt.leftMargin=0;
 			clear_fmt.rightMargin=0;
 
-
-
 			//var selectedText:String = input_txt.text.substring(input_txt.selectionBeginIndex, input_txt.selectionEndIndex);
 			//input_txt.replaceText (input_txt.selectionBeginIndex,input_txt.selectionEndIndex,selectedText);
 			input_txt.setTextFormat(clear_fmt, input_txt.selectionBeginIndex, input_txt.selectionEndIndex);
@@ -2239,18 +1505,16 @@ imgBackBG.visible = false;
 			initialPoint = 0;
 			finalpoint = input_txt.text.length;
 			input_txt.setSelection(initialPoint,finalpoint);
-
 		}
 
-		private function pastefromClipboard(e:Event):void {
-			input_txt.replaceText(input_txt.selectionBeginIndex,input_txt.selectionEndIndex,clipBoard);
-			finalpoint = initialPoint+clipBoard.length;
-			//trace(initialPoint+"---"+finalpoint);
-			input_txt.setSelection(initialPoint,finalpoint);
-			input_txt.setTextFormat(clipboardFmt, initialPoint,finalpoint);
+		private function pastefromClipboard(e:Event):void 
+		{
+			input_txt.replaceSelectedText(clipBoard);
+			
+			finalpoint = initialPoint + clipBoard.length;
 			scroller.scrollTarget = input_txt;
-
 		}
+		
 		private function cuttoClipboard(e:Event):void {
 			input_txt.useRichTextClipboard = true;
 			clipboardFmt = input_txt.getTextFormat(input_txt.selectionBeginIndex, input_txt.selectionEndIndex);
@@ -2268,59 +1532,22 @@ imgBackBG.visible = false;
 			//trace(":::::   "+clipBoard);
 		}
 		
-		private function changeOccurredIN(e:Event):void {
-
-			var my_fmt:TextFormat = input_txt.getTextFormat(input_txt.selectionBeginIndex, input_txt.selectionEndIndex );
-
-
-			my_fmt.indent = indStepper.value;
-
-
-			input_txt.setTextFormat(my_fmt, input_txt.selectionBeginIndex, input_txt.selectionEndIndex);
-			scroller.scrollTarget = input_txt;
-		}
-		private function changeOccurredLE(e:Event):void {
-
-			var my_fmt:TextFormat =  input_txt.getTextFormat(input_txt.selectionBeginIndex, input_txt.selectionEndIndex);
-			my_fmt.leading = lineStepper.value;
-
-			input_txt.setTextFormat(my_fmt, input_txt.selectionBeginIndex, input_txt.selectionEndIndex);
-			scroller.scrollTarget = input_txt;
-		}
-		private function changeOccurredLM(e:Event):void {
-
-			var my_fmt:TextFormat =  input_txt.getTextFormat(input_txt.selectionBeginIndex, input_txt.selectionEndIndex);
-
-			my_fmt.leftMargin = lMarginStepper.value;
-
-			input_txt.setTextFormat(my_fmt, input_txt.selectionBeginIndex, input_txt.selectionEndIndex);
-			scroller.scrollTarget = input_txt;
-		}
-		private function changeOccurredRM(e:Event):void {
-
-			var my_fmt:TextFormat =  input_txt.getTextFormat(input_txt.selectionBeginIndex, input_txt.selectionEndIndex);
-
-			my_fmt.rightMargin = rMarginStepper.value;
-
-			input_txt.setTextFormat(my_fmt, input_txt.selectionBeginIndex, input_txt.selectionEndIndex);
-			scroller.scrollTarget = input_txt;
-		}
 		///////////////
 		private function formatParagraphListener(e:Event):void {
 
 			showParagraphtab();
 
-			viewHTML.enabled= false;
-			findActive.enabled= false;
-			hyperlinkActive.enabled= false;
+			viewHTML.enabled = false;
+			findActive.enabled = false;
+			hyperlinkActive.enabled = false;
 
 		}
 		private function paraBackButListener(e:Event):void {
 
 			hideParagraphtab();
-			viewHTML.enabled= true;
-			findActive.enabled= true;
-			hyperlinkActive.enabled= true;
+			viewHTML.enabled = true;
+			findActive.enabled = true;
+			hyperlinkActive.enabled = true;
 		}
 
 		private function insertChar(e:Event):void {
@@ -2369,16 +1596,13 @@ imgBackBG.visible = false;
 				rightIndentBut.enabled = true;
 				l_button.enabled = true;
 				leftIndentBut.enabled = true;
-
-
+		
 			} else {
 				rightIndentBut.enabled = false;
 				l_button.enabled = false;
 				leftIndentBut.enabled = false;
-
 			}
 		}
-
 
 		private function findNextListener(e:Event):void {
 			//trace(searchString);
@@ -2394,16 +1618,17 @@ imgBackBG.visible = false;
 			}
 		}
 
-		private function updateFindTxt(e:Event):void {
+		private function updateFindTxt(e:Event):void 
+		{
 			searchString = findTxt.text;
-
 		}
 
 
-		private function updateReplaceTxt(e:Event):void {
+		private function updateReplaceTxt(e:Event):void 
+		{
 			replaceString = replaceTxt.text;
-
 		}
+		
 		private function replaceListener(e:Event):void {
 
 			if (initialPoint > -1) {
@@ -2422,9 +1647,10 @@ imgBackBG.visible = false;
 			changeFindButtonToggle();
 
 			displayFindtab();
-
 		}
-		private function changecolorTickHandler(event:MouseEvent):void {
+		
+		private function changecolorTickHandler(event:MouseEvent):void 
+		{
 			if ( changecolorTick.selected == true ) {
 				linkColorPicker.enabled = true;
 			} else {
@@ -2432,20 +1658,18 @@ imgBackBG.visible = false;
 			}
 		}
 
-
+		//TODO!
 		private function addunderlineTickHandler(event:MouseEvent):void {
 			//
 		}
 
-
-		private function linkColorPickerChangeHandler(event:ColorPickerEvent):void {
-
+		private function linkColorPickerChangeHandler(event:ColorPickerEvent):void 
+		{
 			selectedLinkColor = event.color;//event.target.hexValue;
-			////trace("color changed:", event.color, "(#" + event.target.hexValue + ")");
-
 		}
-		private function hyperlinkListener(e:Event):void {
-
+		
+		private function hyperlinkListener(e:Event):void 
+		{
 			if (isLinkShow == true) {
 
 				displayLinkElements();
@@ -2463,12 +1687,14 @@ imgBackBG.visible = false;
 
 			}
 			toggleLinkButton();
-
 		}
 
-
-		private function comboBoxChangeListener(event:Event):void {
-			if (viewHTML.enabled == true) {
+		private function controlChangeListener(event:Event):void 
+		{
+			// if (viewHTML.enabled == true)  --JMW: I changed this from the commented line to the line below.
+			// I wasn't quite sure what the original intent was, but I assume it was testing whether we're in HTML editing mode or rich editing mode.
+			if (this.mIsRichText == true)
+			{
 				if (input_txt.selectionBeginIndex == input_txt.selectionEndIndex)
 				{
 					stage.focus = input_txt;
@@ -2476,12 +1702,25 @@ imgBackBG.visible = false;
 					switch(event.currentTarget)
 					{
 						case font_cb :
-							// if it's the font combo box and nothing is selected, change the default format so new text will be affected.
+							// if it's the font combo box and nothing is selected, change the default
 							defaultFormat.font = ComboBox(event.currentTarget).selectedItem.fontName;
-							break;
+						break;
 						case size_cb :
 							defaultFormat.size = ComboBox(event.currentTarget).selectedLabel;
-							break;
+						break;
+						case rMarginStepper:
+							defaultFormat.rightMargin = rMarginStepper.value;
+						break;
+						case rMarginStepper:
+							defaultFormat.leftMargin = lMarginStepper.value;
+						break;
+						
+						case indStepper:
+							defaultFormat.indent = indStepper.value;
+						break;
+						case lineStepper:
+							defaultFormat.leading = lineStepper.value;
+						break;
 					}
 					input_txt.defaultTextFormat = defaultFormat;
 				}
@@ -2493,7 +1732,6 @@ imgBackBG.visible = false;
 		private function buttonClickListener(event:MouseEvent):void {
 
 			if (viewHTML.enabled == true) {
-				//If they have no text selected, change the default text style
 				if (input_txt.selectionBeginIndex == input_txt.selectionEndIndex)
 				{
 					stage.focus = input_txt;
@@ -2511,12 +1749,36 @@ imgBackBG.visible = false;
 						case italic_button :
 							defaultFormat.italic = !defaultFormat.italic;
 							break;
-						case sizeUp_button :
-							defaultFormat.size += 1;
-							break;
-						case sizeDown_button :
-							defaultFormat.size = Number(defaultFormat.size)-1;
-							break;
+						case sizeUpButton:
+							var fontSizes:DataProvider = size_cb.dataProvider;
+							var currentInd:Number = 0;
+							
+							for (var i:int = 0; i < fontSizes.length - 1; i++) // The -1 in this case is because we can't get any bigger than our last element. --JMW
+							{
+								if (fontSizes.getItemAt(i).data == defaultFormat.size)
+									{
+									var newSize:Object = fontSizes.getItemAt(i+1);
+									defaultFormat.size = newSize.data;
+									size_cb.selectedIndex = i + 1;
+									break;
+								}
+							}
+						break;
+						case sizeDownButton:
+							var fontSizes:DataProvider = size_cb.dataProvider;
+							var currentInd:Number = 0;
+							
+							for (var i:int = 1; i < fontSizes.length; i++) // The 1 in this case is because we can't get any smaller than our first element --JMW
+							{
+								if (fontSizes.getItemAt(i).data == defaultFormat.size)
+								{
+									var newSize:Object = fontSizes.getItemAt(i - 1);
+									defaultFormat.size = newSize.data;
+									size_cb.selectedIndex = i - 1;
+									break;
+								}
+							}							
+						break;
 					}
 					input_txt.defaultTextFormat = defaultFormat;
 				}
@@ -2524,16 +1786,12 @@ imgBackBG.visible = false;
 					applyStyle(event.currentTarget);
 			}
 		}
-		private function hyperbuttonClickListener(event:MouseEvent):void {
-
-
+		
+		private function hyperbuttonClickListener(event:MouseEvent):void 
+		{
 			applyStyle(event.currentTarget);
-
-
-
 		}
-
-
+		
 		private function colorPickerChangeHandler(event:ColorPickerEvent):void {
 
 			selectedFontColor = event.color;//event.target.hexValue;
@@ -2551,9 +1809,8 @@ imgBackBG.visible = false;
 			}
 		}
 
-
-		private function specialCharButListener(e:Event):void {
-
+		private function specialCharButListener(e:Event):void 
+		{
 			showChartab();
 			hyperlinkActive.enabled = false ;
 			findActive.enabled = false ;
@@ -2561,8 +1818,8 @@ imgBackBG.visible = false;
 
 		}
 
-		private function charBackButListener(e:Event):void {
-
+		private function charBackButListener(e:Event):void 
+		{
 			hideChartab();
 			Show3rdRow();
 
@@ -2572,12 +1829,11 @@ imgBackBG.visible = false;
 
 		}
 
-		public function applyStyle(theObject:*):void {
-			if ((input_txt.selectionBeginIndex == 0) && (input_txt.selectionEndIndex == 0)) {
+		public function applyStyle(theObject:*):void 
+		{
+			if ((input_txt.selectionBeginIndex == 0) && (input_txt.selectionEndIndex == 0)) 
 				return;
-			}
 			
-			//JMW - this fixes a crash that occurs if they don't have any text selected but change the style.
 			if (input_txt.selectionBeginIndex == input_txt.selectionEndIndex)
 				return;
 			
@@ -2585,37 +1841,58 @@ imgBackBG.visible = false;
 			// because the majority of the code in this function is the same, 
 			// rather than rewrite the code for each instance, we'll perform a "switch" 
 			// on the name of the target component and simply change the one paramter in the format.
-			switch (theObject) {
+			switch (theObject) 
+			{
 				case font_cb :
 					// if the font_cb ComboBox instance is changed, set the font to the currently selected item in the ComboBox.
 					my_fmt.font = ComboBox(theObject).selectedItem.fontName;
-					break;
+				break;
 				case size_cb :
 					my_fmt.size = ComboBox(theObject).selectedLabel;
-					break;
+				break;
 				case bold_button :
 					// if the bold_btn Button instance is clicked, toggle the bold property.
 					my_fmt.bold = !my_fmt.bold;
-					break;
+				break;
 				case underline_button :
 					// if the underline_button Button instance is clicked, toggle the underline property.
 					my_fmt.underline = !my_fmt.underline;
-					break;
+				break;
 				case italic_button :
 					my_fmt.italic = !my_fmt.italic;
-					break;
-				case sizeUp_button :
-					// if the sizeUp_btn Button instance is clicked, increment the font size by one pixel.
-					my_fmt.size += 1;
-					break;
-				case sizeDown_button :
-					my_fmt.size = Number(my_fmt.size)-1;
-					break;
+				break;
+				case sizeUpButton :
+					var fontSizes:DataProvider = size_cb.dataProvider;
+					var currentInd:Number = 0;
 					
-				case hyperlink_button :
-
-
-
+					for (var i:int = 0; i < fontSizes.length - 1; i++) // The -1 in this case is because we can't get any smaller than our first element --JMW
+					{
+						if (fontSizes.getItemAt(i).data == my_fmt.size)
+						{
+							var newSize:Object = fontSizes.getItemAt(i + 1);
+							my_fmt.size = newSize.data;
+							size_cb.selectedIndex = i + 1;
+							break;
+						}
+					}
+				break;
+				case sizeDownButton :
+					var fontSizes:DataProvider = size_cb.dataProvider;
+					var currentInd:Number = 0;
+					
+					for (var i:int = 1; i < fontSizes.length; i++) // The 1 in this case is because we can't get any smaller than our first element --JMW
+					{
+						if (fontSizes.getItemAt(i).data == my_fmt.size)
+						{
+							var newSize:Object = fontSizes.getItemAt(i - 1);
+							my_fmt.size = newSize.data;
+							size_cb.selectedIndex = i - 1;
+							break;
+						}
+					}
+				break;
+					
+				case hyperlink_button:
 					my_fmt.url = linkTxt.text;
 					my_fmt.target = window_cb.selectedLabel;
 					////trace(window_cb.selectedLabel);
@@ -2628,33 +1905,21 @@ imgBackBG.visible = false;
 					if (addunderlineTick.selected == true) {
 						my_fmt.underline =  true;
 					}
-					//applyStyle(input_txt);
-					break;
-
-
+				break;
+				
 				case l_button :
-
-
-
 					my_fmt.bullet = !my_fmt.bullet;
-
-
-					break;
-
+				break;
 
 				case leftIndentBut :
-
 					my_fmt.blockIndent += 5;
-
-					break;
-
+				break;
 
 				case rightIndentBut :
 					//trace( my_fmt.blockIndent);
 					my_fmt.blockIndent = Number(my_fmt.blockIndent)-5;
 					//trace( my_fmt.blockIndent);
-					break;
-
+				break;
 
 				case leftAlign_button :
 					my_fmt.align = "left";
@@ -2666,35 +1931,46 @@ imgBackBG.visible = false;
 
 				case rightAlign_button :
 					my_fmt.align = "right";
-					break;
+				break;
 
 				case justifiedAlign_button :
 					my_fmt.align = "justify";
-					break;
-
-					/*case color_cb :
-					// if the color_cb ComboBox instance changes, set the color to the currently selected item's data property
-					my_fmt.color = ComboBox(theObject).selectedItem.data;
-					//trace(ComboBox(theObject).selectedItem.data+"dddddddd")
-					break;
-					*/
+				break;
+				
+				case rMarginStepper:
+					my_fmt.rightMargin = rMarginStepper.value;
+				break;
+				
+				case lMarginStepper:
+					my_fmt.leftMargin = lMarginStepper.value;
+				break;
+				
+				case indStepper:
+					my_fmt.indent = indStepper.value;
+				break;
+				
+				case lineStepper:
+					my_fmt.leading = lineStepper.value;
+				break;
+	
 				case fontColorPicker :
 					////trace(selectedFontColor+"kkkkk")
 					my_fmt.color = selectedFontColor;
-					break;
+				break;
 
-
-
-				
 			}
 			// reapply the text format.
 			input_txt.setTextFormat(my_fmt, input_txt.selectionBeginIndex, input_txt.selectionEndIndex);
 			scroller.scrollTarget = input_txt;
-
+		}
+		
+		private function get richTextMode():Boolean
+		{
+			return this.mIsRichText;
 		}
 
-		private function viewHTMLListener(e:Event):void {
-
+		private function viewHTMLListener(e:Event):void 
+		{
 			if (viewHTML.label == "< HTML Code >") {
 
 				openFindTab();
@@ -2703,27 +1979,24 @@ imgBackBG.visible = false;
 				hyperlinkActive.enabled = false;
 				findActive.enabled = false;
 
-
 				var format:TextFormat = new TextFormat();
 				format.font = "Verdana";
 				format.color = 0x000000;
 				format.size = 10;
 				format.underline = false;
 
-
-
 				//input_txt.setTextFormat(my_fmt, input_txt.selectionBeginIndex, input_txt.selectionEndIndex);
 				input_txt.defaultTextFormat = format;
 				input_txt.alwaysShowSelection = false;
 				input_txt.text = input_txt.htmlText;
 				viewHTML.label = "Rich Text";
+				this.mIsRichText = false;
 				//viewRichText.enabled = true;
 
 				colorHTML();
 
 			} else {
-
-
+				this.mIsRichText = true;
 				findActive.enabled = true;
 				hyperlinkActive.enabled = true;
 				input_txt.alwaysShowSelection = false;
@@ -2734,28 +2007,5 @@ imgBackBG.visible = false;
 
 			}
 		}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 	}
 }
